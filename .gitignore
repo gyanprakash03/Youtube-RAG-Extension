@@ -1,0 +1,24 @@
+# Python
+backend/.venv/
+backend/__pycache__/
+backend/**/*.pyc
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Node
+extension/node_modules/
+
+# WXT / build output
+extension/.output/
+extension/.wxt/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
