@@ -8,6 +8,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { chat, ingestVideo } from "./api";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 
 export default function SidePanel() {
@@ -198,9 +200,11 @@ export default function SidePanel() {
                     </h2>
                   </div>
 
-                  <p className="whitespace-pre-wrap text-sm leading-6 text-zinc-200">
-                    {answer}
-                  </p>
+                  <div className="text-sm leading-6 text-zinc-200 ">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {answer}
+                    </ReactMarkdown>
+                  </div>
                 </div>
 
               ) : (
