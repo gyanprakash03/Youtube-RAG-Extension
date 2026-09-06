@@ -93,6 +93,9 @@ def ingest(
         return IngestResponse(message=message)
 
     except Exception:
+        import logging
+        logging.exception("Video ingestion failed")
+        
         raise HTTPException(
             status_code=500,
             detail="Unable to prepare this video",
