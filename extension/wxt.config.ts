@@ -5,7 +5,7 @@ export default defineConfig({
   modules: ["@wxt-dev/module-react"],
 
   manifest: {
-    name: "YouTube RAG",
+    name: "VidMind",
     description: "Ask questions about YouTube videos using AI",
     action: {},
     side_panel: {

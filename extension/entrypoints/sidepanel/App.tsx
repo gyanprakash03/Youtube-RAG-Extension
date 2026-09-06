@@ -168,8 +168,8 @@ export default function SidePanel() {
                   </span>
                 </div>
 
-                <span className="text-[11px] text-zinc-600">
-                  YouTube RAG
+                <span className="text-[11px] text-zinc-600 italic">
+                  VidMind 1.0
                 </span>
               </div>
             </div>
