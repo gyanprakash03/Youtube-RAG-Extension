@@ -10,6 +10,7 @@ import {
 import { chat, ingestVideo } from "./api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import packageJson from "~~/package.json";
 
 
 type Message = {
@@ -257,7 +258,7 @@ export default function SidePanel() {
                 </div>
 
                 <span className="text-[11px] text-zinc-600 italic">
-                  VidMind 1.0
+                  VidMind {packageJson.version}
                 </span>
               </div>
             </div>
