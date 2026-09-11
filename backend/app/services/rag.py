@@ -1,6 +1,7 @@
 from app.prompts.rag import rag_prompt
 from app.services.llm import LLMService
 from app.services.retrieval import RetrievalService
+from app.prompts.query_rewrite import query_rewrite_prompt
 
 
 class RAGService:
@@ -8,15 +9,28 @@ class RAGService:
         self.retrieval_service = RetrievalService()
         self.llm_service = LLMService()
 
+        self.rewrite_chain = query_rewrite_prompt | self.llm_service.llm
         self.chain = rag_prompt | self.llm_service.llm
 
 
-    def answer(self, question: str, video_id: str, k: int = 5):
-        documents = self.retrieval_service.retrieve(question, video_id, k)
+    def answer(self, question: str, video_id: str, history: list, k: int = 5):
+        history_text = "\n".join(
+            f"{message.role}: {message.content}"
+            for message in history
+        )
+
+        rewritten_question = self.rewrite_chain.invoke({
+            "history": history_text,
+            "question": question,
+        })
+        rewritten_question = rewritten_question.text
+
+        documents = self.retrieval_service.retrieve(rewritten_question, video_id, k)
 
         context = self.format_documents(documents)
 
         response = self.chain.invoke({
+            "history": history_text,
             "context": context,
             "question": question,
         })
@@ -25,7 +39,6 @@ class RAGService:
 
         return {
             "answer": answer,
-            "retrieved_chunks": self.format_retrieved_chunks(documents),
         }
     
 
@@ -36,15 +49,3 @@ class RAGService:
             f"{document.page_content}"
             for document in documents
         )
-
-
-    def format_retrieved_chunks(self, documents):
-        return [
-            {
-                "text": document.page_content,
-                "start_time": document.metadata["start_time"],
-                "end_time": document.metadata["end_time"],
-                "chunk_index": document.metadata["chunk_index"],
-            }
-            for document in documents
-        ]

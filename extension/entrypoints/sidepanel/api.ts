@@ -1,22 +1,20 @@
-// const API_URL = "http://localhost:8000";
-const API_URL = "https://youtube-rag-extension-wr2z.onrender.com";
+const API_URL = "http://localhost:8000";
+// const API_URL = "https://youtube-rag-extension-wr2z.onrender.com";
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
 
 export interface ChatRequest {
   video_id: string;
   question: string;
+  history?: ChatMessage[];
   k?: number;
-}
-
-export interface RetrievedChunk {
-  text: string;
-  start_time: number;
-  end_time: number;
-  chunk_index: number;
 }
 
 export interface ChatResponse {
   answer: string;
-  retrieved_chunks: RetrievedChunk[];
 }
 
 export interface IngestResponse {

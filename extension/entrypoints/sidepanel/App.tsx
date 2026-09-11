@@ -12,10 +12,17 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+  renderedContent?: string;
+};
+
+
 export default function SidePanel() {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [ingesting, setIngesting] = useState(false);
   const [ingestionError, setIngestionError] = useState<string | null>(null);
@@ -75,11 +82,60 @@ export default function SidePanel() {
     }
 
     setQuestion("");
-    setAnswer("");
+    setMessages([]);
     setIngestionError(null);
 
     prepareVideo();
   }, [videoId]);
+
+
+  const formatTimestamp = (seconds: number) => {
+    const totalSeconds = Math.floor(seconds);
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const remainingSeconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+    }
+
+    return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+  };
+
+
+  const renderCitations = (text: string) => {
+    return text.replace(
+      /\[((?:\d+(?:\.\d+)?)(?:\s*,\s*\d+(?:\.\d+)?)+)\]|\[(\d+(?:\.\d+)?)\]/g,
+      (_, groupedTimestamps, singleTimestamp) => {
+        const timestamps = groupedTimestamps
+          ? groupedTimestamps.split(",").map((timestamp: string) => timestamp.trim())
+          : [singleTimestamp];
+
+        return timestamps
+          .map((timestamp: string) => {
+            const seconds = Number(timestamp);
+
+            if (!Number.isFinite(seconds)) {
+              return `[${timestamp}]`;
+            }
+
+            const formattedTimestamp = formatTimestamp(seconds);
+
+            return `[${formattedTimestamp}](#timestamp-${seconds})`;
+          })
+          .join(" ");
+      },
+    );
+  };
+
+
+  const seekTo = (seconds: number) => {
+    browser.runtime.sendMessage({
+      type: "SEEK_TO",
+      time: seconds,
+    });
+  };
 
 
   const handleAsk = async () => {
@@ -87,20 +143,46 @@ export default function SidePanel() {
       return;
     }
 
+    const currentQuestion = question.trim();
+    const history = messages.slice(-10);
+
     setLoading(true);
-    setAnswer("");
+    setQuestion("");
+
+    setMessages((previous) => [
+      ...previous,
+      {
+        role: "user",
+        content: currentQuestion,
+      },
+    ]);
 
     try {
       const response = await chat({
         video_id: videoId,
-        question: question.trim(),
+        question: currentQuestion,
+        history,
       });
 
-      setAnswer(response.answer);
+      setMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content: response.answer,
+          renderedContent: renderCitations(response.answer),
+        },
+      ]);
     }
     catch (error) {
       console.error(error);
-      setAnswer("Something went wrong while getting the answer.");
+
+      setMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content: "Something went wrong while getting the answer.",
+        },
+      ]);
     }
     finally {
       setLoading(false);
@@ -179,44 +261,94 @@ export default function SidePanel() {
 
             {/* Answer area */}
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
-              {loading ? (
-                <div className="flex h-full items-center justify-center">
-                  <div className="flex flex-col items-center">
-                    <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
-
-                    <p className="mt-3 text-xs text-zinc-500">
-                      Thinking...
-                    </p>
-                  </div>
-                </div>
-
-              ) : answer ? (
+              {messages.length > 0 ? (
                 <div>
-                  <div className="mb-3 flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-zinc-400" />
+                  {messages.map((message, index) => (
+                    <div key={index} className="mb-6">
+                      {message.role === "user" ? (
+                        <>
+                          <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-zinc-600">
+                            You
+                          </div>
 
-                    <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                      Answer
-                    </h2>
-                  </div>
+                          <div className="text-sm leading-6 text-zinc-200">
+                            {message.content}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="mb-2 flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-zinc-400" />
+                            <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                              Answer
+                            </h2>
+                          </div>
 
-                  <div className="text-sm leading-6 text-zinc-200 ">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {answer}
-                    </ReactMarkdown>
-                  </div>
+                          <div className="text-sm leading-6 text-zinc-200">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                a: ({ href, children }) => {
+                                  if (href?.startsWith("#timestamp-")) {
+                                    const seconds = Number(
+                                      href.replace("#timestamp-", ""),
+                                    );
+
+                                    return (
+                                      <button
+                                        onClick={() => seekTo(seconds)}
+                                        className="cursor-pointer mx-0.5 inline rounded bg-zinc-800 px-1.5 py-0.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-700 hover:text-zinc-100"
+                                      >
+                                        {children}
+                                      </button>
+                                    );
+                                  }
+
+                                  return (
+                                    <a
+                                      href={href}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="underline"
+                                    >
+                                      {children}
+                                    </a>
+                                  );
+                                },
+                              }}
+                            >
+                              {message.renderedContent ?? message.content}
+                            </ReactMarkdown>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+
+                  {loading && (
+                    <div className="mb-6">
+                      <div className="mb-2 flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-zinc-400" />
+                        <h2 className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                          Answer
+                        </h2>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm text-zinc-500">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Thinking...</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-
               ) : (
                 <div className="flex h-full flex-col items-center justify-center text-center">
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-900">
                     <Sparkles className="h-5 w-5 text-zinc-400" />
                   </div>
-
                   <h2 className="text-sm font-medium text-zinc-200">
                     Ask about this video
                   </h2>
-
                   <p className="mt-2 max-w-62.5 text-xs leading-5 text-zinc-500">
                     Ask a question and I'll find the relevant parts
                     of the transcript.

@@ -15,6 +15,17 @@ Core rules:
 - If the context only partially answers the question, answer the supported part and clearly state what cannot be determined.
 - If the context does not contain enough information to answer the question, say that you could not find enough information in the video to answer it confidently.
 - If the question cannot be answered from the provided context, do not guess.
+- Use the conversation history only to understand references and conversational context. Do not treat previous assistant answers as factual evidence about the video.
+
+Citations:
+- Each video excerpt is preceded by a timestamp in the format [start time - end time], for example [12:32 - 13:10].
+- The first timestamp is the start time of the excerpt and the second timestamp is the end time.
+- When a statement is directly supported by an excerpt, cite it using only that excerpt's start time, for example [12:32].
+- Do not cite the end time. For an excerpt marked [12:32 - 13:10], the only valid citation is [12:32].
+- Place the timestamp citation immediately after the statement it supports.
+- Cite only excerpts that directly support the statement. Do not cite excerpts merely because they are related to the question.
+- Use the exact start time from the provided excerpt. Never invent, estimate, round, or modify a timestamp.
+- Never cite a timestamp that does not appear as a start time in the provided excerpts.
 
 Response style:
 - Answer the question first.
@@ -52,7 +63,11 @@ rag_prompt = ChatPromptTemplate.from_messages([
     ("system", SYSTEM_PROMPT),
     (
         "human",
-        """Video context:
+        """Conversation history:
+
+{history}
+
+Video context:
 
 {context}
 

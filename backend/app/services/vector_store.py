@@ -1,6 +1,13 @@
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, FieldCondition, Filter, MatchValue
-from langchain_qdrant import QdrantVectorStore
+from qdrant_client.models import (
+    Distance,
+    VectorParams,
+    SparseVectorParams,
+    FieldCondition,
+    Filter,
+    MatchValue,
+)
+from langchain_qdrant import QdrantVectorStore, RetrievalMode, FastEmbedSparse
 from langchain_core.documents import Document
 
 from app.core.config import settings
@@ -13,6 +20,9 @@ class VectorStore:
 
     def __init__(self):
         self.embedding_service = EmbeddingService()
+        self.sparse_embedding = FastEmbedSparse(
+            model_name="Qdrant/bm25",
+        )
 
         self.client = QdrantClient(
             url=settings.qdrant_url,
@@ -22,10 +32,15 @@ class VectorStore:
         if not self.client.collection_exists(self.COLLECTION_NAME):
             self.client.create_collection(
                 collection_name=self.COLLECTION_NAME,
-                vectors_config=VectorParams(
-                    size=1536,
-                    distance=Distance.COSINE,
-                ),
+                vectors_config={
+                    "dense": VectorParams(
+                        size=1536,
+                        distance=Distance.COSINE,
+                    ),
+                },
+                sparse_vectors_config={
+                    "sparse": SparseVectorParams(),
+                },
             )
 
             self.client.create_payload_index(
@@ -38,8 +53,12 @@ class VectorStore:
             client=self.client,
             collection_name=self.COLLECTION_NAME,
             embedding=self.embedding_service.embeddings,
+            sparse_embedding=self.sparse_embedding,
+            retrieval_mode=RetrievalMode.HYBRID,
+            vector_name="dense",
+            sparse_vector_name="sparse",
         )
-        
+                
 
     def add_documents(self, documents: list[Document]):
         ids = [

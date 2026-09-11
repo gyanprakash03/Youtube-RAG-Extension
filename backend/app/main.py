@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Literal
 
 # from app.services.transcript import TranscriptService
 # from app.services.chunking import ChunkingService
@@ -42,20 +43,17 @@ app.add_middleware(
 rag_service = RAGService()
 
 
-
-class RetrievedChunk(BaseModel):
-    text: str
-    start_time: float
-    end_time: float
-    chunk_index: int
-
 class ChatResponse(BaseModel):
     answer: str
-    retrieved_chunks: list[RetrievedChunk]
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
 
 class ChatRequest(BaseModel):
     video_id: str
     question: str
+    history: list[ChatMessage] = Field(default_factory=list)
     k: int = 5
 
 class IngestRequest(BaseModel):
@@ -76,6 +74,7 @@ def chat(request: ChatRequest):
     return rag_service.answer(
         question=request.question,
         video_id=request.video_id,
+        history=request.history,
         k=request.k,
     )
 

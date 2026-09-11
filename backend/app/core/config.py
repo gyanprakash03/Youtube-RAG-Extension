@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     qdrant_api_key: str
     database_url: str
     supadata_api_key: str
+    cohere_api_key: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

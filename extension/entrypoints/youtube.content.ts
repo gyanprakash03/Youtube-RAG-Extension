@@ -5,6 +5,12 @@ export default defineContentScript({
     handleVideoChange();
 
     window.addEventListener("yt-navigate-finish", handleVideoChange);
+
+    browser.runtime.onMessage.addListener((message) => {
+      if (message.type === "SEEK_TO") {
+        seekTo(message.time);
+      }
+    });
   },
 });
 
@@ -17,6 +23,17 @@ function handleVideoChange() {
     type: "VIDEO_CHANGED",
     videoId,
   });
+}
+
+function seekTo(time: number) {
+  const video = document.querySelector("video");
+
+  if (!video) {
+    return;
+  }
+
+  video.currentTime = time;
+  video.play().catch(() => {});
 }
 
 function getVideoId(): string | null {
