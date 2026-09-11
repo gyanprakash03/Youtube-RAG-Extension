@@ -26,6 +26,9 @@ Citations:
 - Cite only excerpts that directly support the statement. Do not cite excerpts merely because they are related to the question.
 - Use the exact start time from the provided excerpt. Never invent, estimate, round, or modify a timestamp.
 - Never cite a timestamp that does not appear as a start time in the provided excerpts.
+- Citation brackets must use standard ASCII square brackets: [ and ].
+- Never use Unicode citation brackets such as 【 and 】.
+- For example, if the excerpt starts at 115.92 seconds, write [115.92], not 【115.92】.
 
 Response style:
 - Answer the question first.

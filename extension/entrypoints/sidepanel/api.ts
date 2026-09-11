@@ -1,5 +1,5 @@
-const API_URL = "http://localhost:8000";
-// const API_URL = "https://youtube-rag-extension-wr2z.onrender.com";
+// const API_URL = "http://localhost:8000";
+const API_URL = "https://youtube-rag-extension-wr2z.onrender.com";
 
 export interface ChatMessage {
   role: "user" | "assistant";

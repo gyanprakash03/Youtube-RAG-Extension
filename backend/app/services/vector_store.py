@@ -75,11 +75,12 @@ class VectorStore:
             ids=ids,
         )
 
-    def get_retriever(self, video_id: str, k: int = 5):
+
+    def get_retriever(self, video_id: str):
         return self.vector_store.as_retriever(
             search_type="similarity",
             search_kwargs={
-                "k": k,
+                "k": 20,
                 "filter": Filter(
                     must=[
                         FieldCondition(
@@ -92,10 +93,10 @@ class VectorStore:
         )
 
 
-    def similarity_search_with_score(self, question: str, k: int = 5):
+    def similarity_search_with_score(self, question: str):
         return self.vector_store.similarity_search_with_score(
             query=question,
-            k=k,
+            k=20,
         )
 
 

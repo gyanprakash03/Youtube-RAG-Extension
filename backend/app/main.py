@@ -54,7 +54,6 @@ class ChatRequest(BaseModel):
     video_id: str
     question: str
     history: list[ChatMessage] = Field(default_factory=list)
-    k: int = 5
 
 class IngestRequest(BaseModel):
     video_id: str
@@ -75,7 +74,6 @@ def chat(request: ChatRequest):
         question=request.question,
         video_id=request.video_id,
         history=request.history,
-        k=request.k,
     )
 
 

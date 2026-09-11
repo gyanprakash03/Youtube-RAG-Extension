@@ -105,7 +105,11 @@ export default function SidePanel() {
 
 
   const renderCitations = (text: string) => {
-    return text.replace(
+    const normalizedText = text
+      .replace(/【/g, "[")
+      .replace(/】/g, "]");
+
+    return normalizedText.replace(
       /\[((?:\d+(?:\.\d+)?)(?:\s*,\s*\d+(?:\.\d+)?)+)\]|\[(\d+(?:\.\d+)?)\]/g,
       (_, groupedTimestamps, singleTimestamp) => {
         const timestamps = groupedTimestamps
@@ -315,6 +319,21 @@ export default function SidePanel() {
                                     </a>
                                   );
                                 },
+
+                                pre: ({ children }) => (
+                                  <pre className="my-3 max-w-full overflow-x-auto rounded-lg bg-zinc-900 p-3">
+                                    {children}
+                                  </pre>
+                                ),
+
+                                code: ({ className, children, ...props }) => (
+                                  <code
+                                    className={`${className ?? ""} font-mono text-xs`}
+                                    {...props}
+                                  >
+                                    {children}
+                                  </code>
+                                ),
                               }}
                             >
                               {message.renderedContent ?? message.content}
